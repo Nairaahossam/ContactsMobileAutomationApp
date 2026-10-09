@@ -1,18 +1,19 @@
 # Contacts Mobile Automation App
 
 ## Overview
-This project is a mobile automation testing framework developed to automate the process of creating a new contact in the Android Contacts application.
 
-The project uses Appium with Java and TestNG, following the Page Object Model (POM) design pattern to keep the test code organized, reusable, and maintainable.
+This project is a Java-based mobile automation framework for testing contact creation in the built-in Android Contacts application. It uses Appium with UiAutomator2 and TestNG, follows the Page Object Model (POM), reads test data from Excel, and integrates with Allure for reporting.
 
-## Tech Stack
-- **Programming Language:** Java 17
-- **Mobile Automation:** Appium
-- **Automation Framework:** TestNG
-- **Mobile Driver:** UiAutomator2
+## Technology Stack
+
+- **Language:** Java 17
+- **Mobile Automation:** Appium Java Client
+- **Android Automation Driver:** UiAutomator2
+- **Test Framework:** TestNG
 - **Build Tool:** Maven
 - **Design Pattern:** Page Object Model (POM)
-- **Test Reporting:** Allure Reports
+- **Test Data:** Excel (`.xlsx`) using Apache POI
+- **Reporting:** Allure Reports
 - **IDE:** IntelliJ IDEA
 
 ## Project Structure
@@ -20,109 +21,169 @@ The project uses Appium with Java and TestNG, following the Page Object Model (P
 ```text
 ContactsMobileAutomationApp/
 ├── src/
-│   ├── main/java/
-│   │   ├── factory/
-│   │   │   └── DriverFactory.java
-│   │   └── pages/
-│   │       ├── ContactsPage.java
-│   │       ├── CreateNewContactPage.java
-│   │       └── ContactDetailsPage.java
-│   └── test/java/
-│       ├── base/
-│       │   └── BaseTest.java
-│       └── tests/
-│           └── CreateContactTest.java
+│   ├── main/
+│   │   ├── java/
+│   │   │   ├── base/
+│   │   │   │   └── BasePage.java
+│   │   │   ├── factory/
+│   │   │   │   └── DriverFactory.java
+│   │   │   ├── pages/
+│   │   │   │   ├── ContactsPage.java
+│   │   │   │   ├── CreateNewContactPage.java
+│   │   │   │   └── ContactDetailsPage.java
+│   │   │   └── utils/
+│   │   │       ├── ConfigReader.java
+│   │   │       └── ExcelReader.java
+│   │   └── resources/
+│   │       └── config.properties
+│   └── test/
+│       ├── java/
+│       │   ├── base/
+│       │   │   └── BaseTest.java
+│       │   └── tests/
+│       │       └── CreateContactTest.java
+│       └── resources/
+│           └── testdata/
+│               └── ContactsData.xlsx
+├── allure-report/
 ├── pom.xml
 ├── testng.xml
 ├── .gitignore
 └── README.md
 ```
 
-## Test Scenario
+## Automated Test Scenario
 
 **Create a Contact with Valid Details**
 
-The automated test performs the following steps:
+The test data is loaded from the `Contacts` worksheet in `src/test/resources/testdata/ContactsData.xlsx`.
 
-1. Launches the Android Contacts application on a connected Android device.
-2. Opens the Create Contact form.
-3. Enters the contact's name, company, address, phone number, and email address.
+The test performs the following steps:
+
+1. Starts an Appium session and opens the Android Contacts application.
+2. Opens the form for creating a contact.
+3. Enters the contact name, company, address, phone number, and email from Excel.
 4. Saves the contact.
-5. Verifies that the contact details are displayed after saving.
+5. Verifies that the expected contact name is displayed on the contact details screen.
+6. Deletes the contact created by the test.
+7. Verifies that the contacts list screen is displayed again.
+
+> Note: The current post-delete check verifies that the contacts list indicator is displayed. It does not independently verify that the created contact is absent from the list.
+
+## Framework Design
+
+- **DriverFactory:** Creates and manages the Appium Android driver, launches the Contacts activity, closes the app, and ends the driver session.
+- **BaseTest:** Starts the driver before each test and closes the app/session afterward. It attaches a screenshot to Allure when a test fails.
+- **BasePage:** Contains shared page functionality, including explicit waits, clicking elements, checking visibility, and initializing PageFactory elements.
+- **ContactsPage:** Represents the contacts list screen and provides the add-contact action.
+- **CreateNewContactPage:** Represents the contact creation form, enters contact data, saves the contact, and checks the displayed contact name.
+- **ContactDetailsPage:** Represents the contact details screen and contains the contact deletion flow.
+- **ConfigReader:** Reads settings from `config.properties`, allowing system properties to override values from the file.
+- **ExcelReader:** Reads worksheet rows and converts them to `Object[][]` data for TestNG.
+- **CreateContactTest:** Defines the test scenario, connects the Excel data provider, and performs assertions.
+- **testng.xml:** Identifies the TestNG test suite and test class.
 
 ## Prerequisites
-Before running the tests, make sure you have:
 
-- Java JDK 17 installed.
-- Maven installed or configured through IntelliJ IDEA.
-- Node.js and npm installed.
-- Appium Server installed.
-- Appium UiAutomator2 driver installed.
-- Android SDK and ADB configured.
-- An Android device connected with USB debugging enabled.
+Install and configure the following:
+
+- Java JDK 17
+- Maven
+- Node.js and npm
+- Appium Server
+- Appium UiAutomator2 driver
+- Android SDK and Android Debug Bridge (`adb`)
+- A connected Android device with USB debugging enabled
+- Allure Commandline, if you want to generate and view the report locally
 
 ## Setup Instructions
 
-1. Clone the repository:
+### 1. Clone the Repository
 
-   ```bash
-   git clone https://github.com/Nairaahossam/ContactsMobileAutomationApp.git
-   ```
+```bash
+git clone https://github.com/Nairaahossam/ContactsMobileAutomationApp.git
+cd ContactsMobileAutomationApp
+```
 
-2. Open the project in IntelliJ IDEA.
+### 2. Configure the Device and Appium Server
 
-3. Configure the Android SDK and connect your Android device.
+Update `src/main/resources/config.properties` for your environment:
 
-4. Start the Appium server:
+```properties
+appium.server.url=http://127.0.0.1:4723
+platform.name=Android
+automation.name=UiAutomator2
+device.udid=YOUR_ANDROID_DEVICE_UDID
+new.command.timeout.seconds=60
+wait.timeout.seconds=10
+app.package=com.android.contacts
+app.activity=com.android.contacts.activities.PeopleActivity
+```
 
-   ```bash
-   appium
-   ```
+Replace `YOUR_ANDROID_DEVICE_UDID` with the device identifier shown by:
 
-5. Verify that the device is connected:
+```bash
+adb devices
+```
 
-   ```bash
-   adb devices
-   ```
+Make sure the Appium server URL, Android device, SDK configuration, and app package/activity are correct for your environment.
 
-6. Update the device capabilities in `DriverFactory.java` to match your device configuration.
+### 3. Start Appium
 
-7. Reload the Maven project to download the required dependencies.
+```bash
+appium
+```
 
-## Running the Tests
+Keep the Appium server running while the tests execute.
 
-You can run the test suite using the `testng.xml` file from IntelliJ IDEA.
+### 4. Download Maven Dependencies and Run Tests
 
-Alternatively, if Maven is available in your terminal, run:
+Open the project in IntelliJ IDEA and reload the Maven project, or run:
 
 ```bash
 mvn clean test
 ```
 
+The Maven command runs the suite configured in `testng.xml`.
+
+## Test Data
+
+The Excel workbook is located at:
+
+`src/test/resources/testdata/ContactsData.xlsx`
+
+The worksheet name expected by the test is `Contacts`. It should contain these columns in this order:
+
+| Column | Description |
+|---|---|
+| `name` | Contact name |
+| `company` | Company |
+| `address` | Address |
+| `phone` | Phone number |
+| `email` | Email address |
+
+The first row contains column headers; subsequent non-empty rows are provided to TestNG. Keep phone numbers formatted as text in Excel so leading zeros are preserved.
+
 ## Allure Reporting
 
-The project is configured with Allure TestNG integration.
+The Maven configuration writes Allure results to:
 
-After executing the tests, generate and open the Allure report using:
+`target/allure-results`
+
+After the test run, generate and open a report with Allure Commandline:
 
 ```bash
 allure serve target/allure-results
 ```
 
-The report provides a visual summary of test execution results.
+Alternatively, the project includes an `allure-report/` directory generated by a previous report-generation run. Regenerate the report after new test executions if you want it to reflect the latest results.
 
-## Design Approach
+## Notes
 
-The framework follows the Page Object Model (POM):
-
-- **DriverFactory:** Initializes and manages the Appium driver.
-- **BaseTest:** Handles test setup and driver teardown.
-- **ContactsPage:** Contains interactions with the contacts list screen.
-- **CreateNewContactPage:** Contains interactions with the contact creation form.
-- **ContactDetailsPage:** Represents the contact details screen.
-- **CreateContactTest:** Implements the contact creation test scenario.
-
-This separation improves maintainability, readability, and reusability.
+- The driver configuration uses Android Contacts package/activity values configured in `config.properties`.
+- The test uses Excel data through a TestNG `@DataProvider`; contact values are not passed directly as hardcoded method arguments in the test.
+- The current locators and contact-field ordering are based on the Android Contacts UI used during implementation and may need adjustment for a different device, Android version, language, or Contacts app variant.
+- Ensure that the Excel file contains non-sensitive test data before publishing the repository publicly.
 
 ## Author
 
