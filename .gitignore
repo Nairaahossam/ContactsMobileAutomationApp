@@ -1,0 +1,8 @@
+target/
+.idea/
+*.iml
+.DS_Store
+
+.allure/
+contacts.xml
+contact_form.xml
